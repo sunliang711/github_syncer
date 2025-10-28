@@ -483,6 +483,7 @@ setup(){
 }
 run(){
 	set -e
+	source venv/bin/activate
 	python3 sync_releases.py --schedule
 }
 

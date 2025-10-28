@@ -29,28 +29,28 @@ projects:
     asset_pattern: "*linux-64.zip"
     target_path: "xray/"
   # 示例：Visual Studio Code
-  - owner: "microsoft"
-    repo: "vscode"
-    asset_pattern: "*.deb" # 只下载 .deb 文件
-    target_path: "software/vscode/" # 在R2中的存储路径
+  # - owner: "microsoft"
+  #   repo: "vscode"
+  #   asset_pattern: "*.deb" # 只下载 .deb 文件
+  #   target_path: "software/vscode/" # 在R2中的存储路径
 
-  # 示例：Docker Compose
-  - owner: "docker"
-    repo: "compose"
-    asset_pattern: "*linux-x86_64" # 只下载Linux x64版本
-    target_path: "software/docker-compose/"
+  # # 示例：Docker Compose
+  # - owner: "docker"
+  #   repo: "compose"
+  #   asset_pattern: "*linux-x86_64" # 只下载Linux x64版本
+  #   target_path: "software/docker-compose/"
 
-  # 示例：Go语言
-  - owner: "golang"
-    repo: "go"
-    asset_pattern: "*.linux-amd64.tar.gz" # 只下载Linux AMD64版本
-    target_path: "software/golang/"
+  # # 示例：Go语言
+  # - owner: "golang"
+  #   repo: "go"
+  #   asset_pattern: "*.linux-amd64.tar.gz" # 只下载Linux AMD64版本
+  #   target_path: "software/golang/"
 
-  # 示例：Node.js
-  - owner: "nodejs"
-    repo: "node"
-    asset_pattern: "*linux-x64.tar.xz"
-    target_path: "software/nodejs/"
+  # # 示例：Node.js
+  # - owner: "nodejs"
+  #   repo: "node"
+  #   asset_pattern: "*linux-x64.tar.xz"
+  #   target_path: "software/nodejs/"
 
 # 定时执行配置
 scheduler:
