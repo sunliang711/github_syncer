@@ -1,0 +1,69 @@
+# ===========================================
+# GitHub Release to Cloudflare R2 同步配置
+# ===========================================
+
+# Cloudflare R2 存储配置（必填）
+cloudflare:
+  account_id: "your-account-id" # 在 Cloudflare 仪表板中找到
+  access_key_id: "your-access-key-id" # R2 API Token
+  secret_access_key: "your-secret-access-key" # R2 API Secret
+  bucket_name: "your-bucket-name" # 存储桶名称
+  endpoint_url: "https://your-account-id.r2.cloudflarestorage.com"
+
+# GitHub 配置（可选）
+# 注意：公共仓库不需要token，但设置token可以提高API限制
+github:
+  # token: "ghp_xxxxxxxxxxxx"  # 可选：GitHub Personal Access Token
+  # 不设置token：60次API请求/小时（匿名访问）
+  # 设置token：5000次API请求/小时（认证访问）
+
+# 要同步的项目列表
+projects:
+  # 示例：Visual Studio Code
+  - owner: "microsoft"
+    repo: "vscode"
+    asset_pattern: "*.deb" # 只下载 .deb 文件
+    target_path: "software/vscode/" # 在R2中的存储路径
+
+  # 示例：Docker Compose
+  - owner: "docker"
+    repo: "compose"
+    asset_pattern: "*linux-x86_64" # 只下载Linux x64版本
+    target_path: "software/docker-compose/"
+
+  # 示例：Go语言
+  - owner: "golang"
+    repo: "go"
+    asset_pattern: "*.linux-amd64.tar.gz" # 只下载Linux AMD64版本
+    target_path: "software/golang/"
+
+  # 示例：Node.js
+  - owner: "nodejs"
+    repo: "node"
+    asset_pattern: "*linux-x64.tar.xz"
+    target_path: "software/nodejs/"
+
+# 定时执行配置
+scheduler:
+  enabled: true
+  mode: "interval" # 模式：interval（间隔）、cron（定时）、once（一次）
+
+  # 间隔模式配置
+  interval:
+    hours: 6 # 每6小时执行一次
+    minutes: 0 # 额外分钟数
+
+  # 随机延迟（避免所有实例同时执行）
+  random_delay:
+    enabled: true
+    max_minutes: 30 # 最大随机延迟30分钟
+
+# 通知配置（可选）
+notifications:
+  enabled: false # 是否启用通知
+
+# 基本设置
+settings:
+  log_level: "INFO" # 日志级别：DEBUG、INFO、WARNING、ERROR
+  timeout: 300 # 下载超时时间（秒）
+  max_retries: 3 # 最大重试次数
