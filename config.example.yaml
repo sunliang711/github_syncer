@@ -19,6 +19,15 @@ github:
 
 # 要同步的项目列表
 projects:
+  - owner: "MetaCubeX"
+    repo: "mihomo"
+    asset_pattern: "*linux*64*compatible*gz*"
+    target_path: "mihomo/"
+
+  - owner: "xtls"
+    repo: "xray-core"
+    asset_pattern: "*linux-64.zip"
+    target_path: "xray/"
   # 示例：Visual Studio Code
   - owner: "microsoft"
     repo: "vscode"

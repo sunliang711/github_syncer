@@ -31,17 +31,27 @@ class TaskScheduler:
         self.last_failure_time = None
 
         # 设置信号处理
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+        self._setup_signal_handlers()
 
     def set_notification_handler(self, handler):
         """设置通知处理器"""
         self.notification_handler = handler
 
+    def _setup_signal_handlers(self):
+        """设置信号处理器"""
+        try:
+            signal.signal(signal.SIGINT, self._signal_handler)
+            signal.signal(signal.SIGTERM, self._signal_handler)
+        except ValueError:
+            # 在某些情况下（如非主线程）无法设置信号处理器
+            self.logger.warning("无法设置信号处理器，可能不在主线程中")
+
     def _signal_handler(self, signum, frame):
         """信号处理器"""
-        self.logger.info(f"接收到信号 {signum}，正在停止调度器...")
+        signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM"
+        self.logger.info(f"接收到信号 {signal_name}，正在停止调度器...")
         self.stop()
+        sys.exit(0)
 
     def _execute_with_error_handling(self):
         """带错误处理的任务执行"""
@@ -177,9 +187,13 @@ class TaskScheduler:
         self._execute_with_error_handling()
 
         self.running = True
-        while self.running:
-            schedule.run_pending()
-            time.sleep(60)  # 每分钟检查一次
+        try:
+            while self.running:
+                schedule.run_pending()
+                time.sleep(60)  # 每分钟检查一次
+        except KeyboardInterrupt:
+            self.logger.info("接收到键盘中断信号")
+            self.stop()
 
     def start_cron_scheduler(self):
         """启动cron调度器"""
@@ -191,28 +205,37 @@ class TaskScheduler:
         cron = croniter(expression, datetime.now())
 
         self.running = True
-        while self.running:
-            next_run = cron.get_next(datetime)
-            now = datetime.now()
-
-            if next_run <= now:
-                self._execute_with_error_handling()
-                cron = croniter(expression, datetime.now())
-                continue
-
-            # 等待到下次执行时间
-            sleep_seconds = (next_run - now).total_seconds()
-
-            # 分段睡眠，以便能够响应停止信号
-            while sleep_seconds > 0 and self.running:
-                sleep_time = min(60, sleep_seconds)  # 最多睡眠60秒
-                time.sleep(sleep_time)
-                sleep_seconds -= sleep_time
+        try:
+            while self.running:
+                next_run = cron.get_next(datetime)
                 now = datetime.now()
 
-                # 重新检查是否到了执行时间
-                if now >= next_run:
-                    break
+                if next_run <= now:
+                    self._execute_with_error_handling()
+                    cron = croniter(expression, datetime.now())
+                    continue
+
+                # 等待到下次执行时间
+                sleep_seconds = (next_run - now).total_seconds()
+
+                # 分段睡眠，以便能够响应停止信号
+                while sleep_seconds > 0 and self.running:
+                    sleep_time = min(60, sleep_seconds)  # 最多睡眠60秒
+                    try:
+                        time.sleep(sleep_time)
+                    except KeyboardInterrupt:
+                        self.logger.info("接收到键盘中断信号")
+                        self.stop()
+                        return
+                    sleep_seconds -= sleep_time
+                    now = datetime.now()
+
+                    # 重新检查是否到了执行时间
+                    if now >= next_run:
+                        break
+        except KeyboardInterrupt:
+            self.logger.info("接收到键盘中断信号")
+            self.stop()
 
     def run_once(self):
         """执行一次任务"""
@@ -244,5 +267,9 @@ class TaskScheduler:
 
     def stop(self):
         """停止调度器"""
-        self.running = False
-        self.logger.info("调度器已停止")
+        if self.running:
+            self.running = False
+            self.logger.info("调度器正在停止...")
+            # 清理定时任务
+            schedule.clear()
+            self.logger.info("调度器已停止")

@@ -497,6 +497,8 @@ class ReleaseSync:
 def main():
     """主函数"""
     import argparse
+    import signal
+    import sys
 
     parser = argparse.ArgumentParser(
         description="GitHub Release to Cloudflare R2 同步工具"
@@ -534,7 +536,26 @@ def main():
         notification_handler = NotificationHandler(syncer.config)
         scheduler = TaskScheduler(syncer.config, syncer.sync_all_projects)
         scheduler.set_notification_handler(notification_handler)
-        scheduler.start()
+
+        # 设置信号处理器确保能正确响应 Ctrl+C
+        def signal_handler(signum, frame):
+            print("\n接收到中断信号，正在停止调度器...")
+            scheduler.stop()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
+        try:
+            scheduler.start()
+        except KeyboardInterrupt:
+            print("\n接收到键盘中断，正在停止调度器...")
+            scheduler.stop()
+        except Exception as e:
+            print(f"调度器运行异常: {e}")
+            scheduler.stop()
+        finally:
+            sys.exit(0)
 
     elif args.project:
         # 同步单个项目
