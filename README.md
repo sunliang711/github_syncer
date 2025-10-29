@@ -7,4 +7,7 @@ pip3 install -r requirements.txt
 
 python3 sync_releases.py
 
+./setup.sh setup
+./setup.sh run
+
 ```
