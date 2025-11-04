@@ -33,6 +33,12 @@ projects:
     repo: "xray-core"
     asset_pattern: "*linux-64.zip"
     target_path: "xray/"
+
+  - owner: "fatedier"
+    repo: "frp"
+    asset_pattern: "*linux*amd64*gz"
+    target_path: "frp/"
+
   # 示例：Visual Studio Code
   # - owner: "microsoft"
   #   repo: "vscode"

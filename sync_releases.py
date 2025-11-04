@@ -231,6 +231,74 @@ class ReleaseSync:
             self.logger.warning(f"检查文件存在性时出错: {e}")
             return False
 
+    def get_current_latest_version(self, target_path: str) -> Optional[str]:
+        """获取当前latest目录指向的版本"""
+        try:
+            # 检查latest目录下是否有版本信息文件
+            version_key = f"{target_path.rstrip('/')}/latest/.version"
+            response = self.r2_client.get_object(
+                Bucket=self.bucket_name, Key=version_key
+            )
+            current_version = response["Body"].read().decode("utf-8").strip()
+            return current_version
+        except:
+            return None
+
+    def copy_to_latest(
+        self, source_path: str, target_path: str, release_tag: str, assets: List[Dict]
+    ) -> bool:
+        """将新版本的文件复制到latest目录"""
+        try:
+            latest_path = f"{target_path.rstrip('/')}/latest"
+
+            self.logger.info(f"正在更新latest目录: {latest_path}")
+
+            # 复制所有asset文件到latest目录
+            success_count = 0
+            for asset in assets:
+                filename = asset["name"]
+                source_key = f"{target_path.rstrip('/')}/{release_tag}/{filename}"
+                latest_key = f"{latest_path}/{filename}"
+
+                try:
+                    # 使用R2的copy_object方法复制文件
+                    copy_source = {"Bucket": self.bucket_name, "Key": source_key}
+                    self.r2_client.copy_object(
+                        CopySource=copy_source,
+                        Bucket=self.bucket_name,
+                        Key=latest_key,
+                        MetadataDirective="COPY",
+                    )
+                    success_count += 1
+                    self.logger.debug(f"已复制到latest: {filename}")
+                except Exception as e:
+                    self.logger.error(f"复制文件到latest失败 {filename}: {e}")
+
+            # 创建版本信息文件
+            version_key = f"{latest_path}/.version"
+            version_content = release_tag.encode("utf-8")
+            try:
+                self.r2_client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=version_key,
+                    Body=version_content,
+                    Metadata={
+                        "updated_at": datetime.now().isoformat(),
+                        "file_count": str(len(assets)),
+                    },
+                )
+                self.logger.info(
+                    f"✅ latest目录更新完成: {release_tag} ({success_count}/{len(assets)} 文件)"
+                )
+                return success_count == len(assets)
+            except Exception as e:
+                self.logger.error(f"创建版本信息文件失败: {e}")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"更新latest目录失败: {e}")
+            return False
+
     def calculate_file_hash(self, file_path: str) -> str:
         """计算文件SHA256哈希"""
         sha256_hash = hashlib.sha256()
@@ -414,10 +482,22 @@ class ReleaseSync:
                 except:
                     pass
 
+        # 如果所有文件都同步成功，检查是否需要更新latest目录
+        sync_success = success_count == len(assets)
+        if sync_success:
+            current_latest = self.get_current_latest_version(target_path)
+            if current_latest != release_tag:
+                self.logger.info(
+                    f"检测到新版本，更新latest引用: {current_latest} -> {release_tag}"
+                )
+                self.copy_to_latest(target_path, target_path, release_tag, assets)
+            else:
+                self.logger.info(f"latest目录已是最新版本: {release_tag}")
+
         self.logger.info(
             f"项目 {owner}/{repo} 同步完成: {success_count}/{len(assets)} 成功"
         )
-        return success_count == len(assets)
+        return sync_success
 
     def sync_all_projects(self) -> Dict[str, bool]:
         """同步所有项目"""
