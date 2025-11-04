@@ -34,11 +34,6 @@ projects:
     asset_pattern: "*linux-64.zip"
     target_path: "xray/"
 
-  - owner: "MetaCubeX"
-    repo: "meta-rules-dat"
-    asset_pattern: "geoip.metadb"
-    target_path: "mmdb"
-
   - owner: "fatedier"
     repo: "frp"
     asset_pattern: "*linux*amd64*gz"
