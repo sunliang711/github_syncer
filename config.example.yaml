@@ -24,6 +24,11 @@ projects:
     asset_pattern: "*linux*64*compatible*gz*"
     target_path: "mihomo/"
 
+  - owner: "MetaCubeX"
+    repo: "meta-rules-dat"
+    asset_pattern: "geoip.metadb"
+    target_path: "mmdb"
+
   - owner: "xtls"
     repo: "xray-core"
     asset_pattern: "*linux-64.zip"
