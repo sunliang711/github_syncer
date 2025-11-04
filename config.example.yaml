@@ -38,7 +38,6 @@ projects:
     repo: "frp"
     asset_pattern: "*linux*amd64*gz"
     target_path: "frp/"
-
   # 示例：Visual Studio Code
   # - owner: "microsoft"
   #   repo: "vscode"
